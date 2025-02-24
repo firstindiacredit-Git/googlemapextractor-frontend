@@ -1,0 +1,259 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.main-container {
+  min-height: 100vh;
+  height: 100vh;
+  background-color: #f8f9fa;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background-color: #dc3545;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.download-excel {
+  background-color: white;
+  color: #dc3545;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.content {
+  display: flex;
+  padding: 1rem;
+  gap: 1rem;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 200px;
+  padding: 1rem;
+}
+
+.keyword-section,
+.location-section {
+  margin-bottom: 1rem;
+}
+
+.keyword-section h3,
+.location-section h3 {
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.main-content {
+  flex: 1;
+  background: white;
+  border-radius: 4px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.results-badge {
+  background-color: #20c997;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.clear-btn,
+.extract-email-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+}
+
+.start-extracting-btn {
+  background-color: #20c997;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.start-extracting-btn:hover {
+  background-color: #1ba97f;
+}
+
+/* Add style for stop state */
+.start-extracting-btn[data-extracting="true"] {
+  background-color: #dc3545;
+}
+
+.start-extracting-btn[data-extracting="true"]:hover {
+  background-color: #c82333;
+}
+
+.search-box {
+  margin-left: auto;
+}
+
+.search-box input {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 200px;
+}
+
+.results-table {
+  flex: 1;
+  position: relative;
+  margin-top: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: auto;
+}
+
+table {
+  table-layout: fixed;
+  min-width: 1870px;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8f9fa;
+}
+
+thead tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+thead th {
+  background-color: #f8f9fa;
+  color: #666;
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid #ddd;
+  white-space: nowrap;
+}
+
+tbody {
+  display: block;
+  height: calc(100vh - 250px);
+  overflow: visible;
+}
+
+tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #ddd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+th:nth-child(1), td:nth-child(1) { width: 200px; }
+th:nth-child(2), td:nth-child(2) { width: 150px; }
+th:nth-child(3), td:nth-child(3) { width: 80px; }
+th:nth-child(4), td:nth-child(4) { width: 100px; }
+th:nth-child(5), td:nth-child(5) { width: 120px; }
+th:nth-child(6), td:nth-child(6) { width: 120px; }
+th:nth-child(7), td:nth-child(7) { width: 250px; }
+th:nth-child(8), td:nth-child(8) { width: 100px; }
+th:nth-child(9), td:nth-child(9) { width: 100px; }
+th:nth-child(10), td:nth-child(10) { width: 150px; }
+th:nth-child(11), td:nth-child(11) { width: 150px; }
+th:nth-child(12), td:nth-child(12) { width: 200px; }
+
+tbody::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+tbody::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+tbody::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+tbody::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+td a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+td a:hover {
+  text-decoration: underline;
+}
+
+/* Add these styles */
+.options-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
