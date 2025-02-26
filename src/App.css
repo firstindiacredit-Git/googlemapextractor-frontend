@@ -48,13 +48,19 @@ header h1 {
 }
 
 .sidebar {
-  width: 200px;
+  width: 250px;
   padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .keyword-section,
 .location-section {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .keyword-section h3,
@@ -84,9 +90,13 @@ header h1 {
 
 .action-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 10px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 .results-badge {
@@ -146,6 +156,8 @@ header h1 {
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: auto;
+  min-height: 200px;
+  background: white;
 }
 
 table {
@@ -240,20 +252,183 @@ td a:hover {
 
 /* Add these styles */
 .options-section {
-  margin-top: 1rem;
-  padding: 1rem;
-  border-top: 1px solid #ddd;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #666;
+  color: #495057;
   font-size: 0.9rem;
 }
 
 .checkbox-label input[type="checkbox"] {
   width: auto;
   margin: 0;
+}
+
+/* Add these styles to your existing CSS */
+
+.progress-section {
+  width: 100%;
+  margin: 10px 0;
+  padding: 0 15px;
+  opacity: 0.8;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4CAF50;
+  transition: width 0.3s ease;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #666;
+}
+
+.start-extracting-btn.extracting {
+  background-color: #ff4444;
+}
+
+.start-extracting-btn.extracting:hover {
+  background-color: #cc0000;
+}
+
+/* Update existing styles */
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+/* Add these new styles for sidebar progress */
+.sidebar-progress {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.sidebar-progress h3 {
+  color: #495057;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.progress-stats {
+  margin-bottom: 12px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.stat-item:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.sidebar-progress-fill {
+  height: 100%;
+  background-color: #20c997;
+  transition: width 0.3s ease;
+}
+
+/* Remove the old progress styles and add these new ones */
+.compact-progress {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: #e9ecef;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #20c997;
+  transition: width 0.3s ease;
+}
+
+/* Add loading styles */
+.table-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 10px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #20c997;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Optional: Add fade-in animation for results */
+.results-table table {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

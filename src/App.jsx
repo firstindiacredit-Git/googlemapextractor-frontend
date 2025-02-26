@@ -10,21 +10,21 @@ function App() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [controller, setController] = useState(null);
   const [extractEmail, setExtractEmail] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [estimatedTime, setEstimatedTime] = useState(null);
+  const [startTime, setStartTime] = useState(null);
 
   const handleStartExtract = async () => {
     if (isExtracting) {
       try {
-        // First call the stop endpoint
         await fetch('http://localhost:5000/stop-scrape', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          }
+          headers: { 'Content-Type': 'application/json' }
         });
-        
-        // Then abort the current request
         controller?.abort();
         setIsExtracting(false);
+        setProgress(0);
+        setEstimatedTime(null);
       } catch (error) {
         console.error('Error stopping extraction:', error);
       }
@@ -34,17 +34,16 @@ function App() {
     setIsExtracting(true);
     setResults([]);
     setTotalResults(0);
+    setProgress(0);
+    setStartTime(Date.now());
 
-    // Create AbortController for stopping the request
     const abortController = new AbortController();
     setController(abortController);
 
     try {
       const response = await fetch('http://localhost:5000/scrape', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json', 
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: `${keywords} ${location}`,
           total: 100,
@@ -70,7 +69,18 @@ function App() {
             if (data.type === 'update') {
               setResults(prev => [...prev, data.data]);
               setTotalResults(prev => prev + 1);
+              setProgress(data.progress);
+
+              if (startTime && data.progress > 0) {
+                const elapsedTime = (Date.now() - startTime) / 1000;
+                const itemsPerSecond = data.progress / elapsedTime;
+                const remainingItems = 100 - data.progress;
+                const estimatedSeconds = remainingItems / itemsPerSecond;
+                setEstimatedTime(Math.ceil(estimatedSeconds));
+              }
             } else if (data.type === 'complete') {
+              setProgress(100);
+              setEstimatedTime(0);
               break;
             }
           }
@@ -85,6 +95,7 @@ function App() {
     } finally {
       setIsExtracting(false);
       setController(null);
+      setStartTime(null);
     }
   };
 
@@ -152,6 +163,23 @@ function App() {
             />
           </div>
           
+          {isExtracting && (
+            <div className="compact-progress">
+              <div className="progress-info">
+                <span>{totalResults}/100</span>
+                <span>{Math.round(progress)}%</span>
+                {estimatedTime > 0 && (
+                  <span>{Math.floor(estimatedTime / 60)}m {estimatedTime % 60}s</span>
+                )}
+              </div>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="main-content">
