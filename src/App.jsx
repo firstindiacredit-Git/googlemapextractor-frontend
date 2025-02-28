@@ -13,6 +13,7 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleStartExtract = async () => {
     if (isExtracting) {
@@ -31,6 +32,9 @@ function App() {
       return;
     }
 
+    // Check if location is a pincode
+    const isPincode = /^\d{6}$/.test(location.trim());
+    
     setIsExtracting(true);
     setResults([]);
     setTotalResults(0);
@@ -45,7 +49,9 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: `${keywords} ${location}`,
+          query: keywords,
+          location: location,
+          isPincode: isPincode,
           total: 100,
           extractEmail
         }),
@@ -129,6 +135,31 @@ function App() {
     setTotalResults(0);
   };
 
+  // Add search filter function
+  const filteredResults = results.filter(item => {
+    if (!searchTerm) return true;
+    
+    // Convert search term to string and remove spaces
+    const search = searchTerm.toString().trim().toLowerCase();
+    
+    // Check if search is a pincode (6 digits)
+    const isPincodeSearch = /^\d{6}$/.test(search);
+    
+    if (isPincodeSearch) {
+      // If searching by pincode, match exactly
+      return item.pincode === search;
+    } else {
+      // Otherwise search in all fields
+      return (
+        item.name?.toLowerCase().includes(search) ||
+        item.address?.toLowerCase().includes(search) ||
+        item.city?.toLowerCase().includes(search) ||
+        item.state?.toLowerCase().includes(search) ||
+        item.pincode?.includes(search)
+      );
+    }
+  });
+
   return (
     <div className="main-container">
       <header>
@@ -189,15 +220,15 @@ function App() {
             </div>
             <button className="clear-btn" onClick={handleClearData}>Clear Data</button>
             <div className="options-section">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={extractEmail}
-                onChange={(e) => setExtractEmail(e.target.checked)}
-              />
-              Extract Email (Slower)
-            </label>
-          </div>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={extractEmail}
+                  onChange={(e) => setExtractEmail(e.target.checked)}
+                />
+                Extract Email (Slower)
+              </label>
+            </div>
             <button 
               className="start-extracting-btn"
               onClick={handleStartExtract}
@@ -205,7 +236,12 @@ function App() {
               {isExtracting ? 'Stop Extracting' : 'Start Extracting'}
             </button>
             <div className="search-box">
-              <input type="text" placeholder="Search..." />
+              <input 
+                type="text" 
+                placeholder="Search by pincode or text..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </div>
 
@@ -213,6 +249,7 @@ function App() {
             <table>
               <thead>
                 <tr>
+                  <th>S.No</th>
                   <th>Title</th>
                   <th>Email</th>
                   <th>Phone</th>
@@ -233,8 +270,9 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {results.map((item, index) => (
+                {filteredResults.map((item, index) => (
                   <tr key={index}>
+                    <td>{index + 1}</td>
                     <td>{item?.name || 'N/A'}</td>
                     <td>{typeof item?.email === 'string' ? item.email : 'N/A'}</td>
                     <td>{item?.phone || 'N/A'}</td>

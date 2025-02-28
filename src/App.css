@@ -105,6 +105,9 @@ header h1 {
   padding: 0.5rem 1rem;
   border-radius: 4px;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .clear-btn,
@@ -140,13 +143,21 @@ header h1 {
 
 .search-box {
   margin-left: auto;
+  position: relative;
 }
 
 .search-box input {
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   width: 200px;
+  font-size: 0.9rem;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #20c997;
+  box-shadow: 0 0 0 2px rgba(32, 201, 151, 0.1);
 }
 
 .results-table {
@@ -162,7 +173,7 @@ header h1 {
 
 table {
   table-layout: fixed;
-  min-width: 1870px;
+  min-width: 1840px;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -175,19 +186,13 @@ thead {
   background: #f8f9fa;
 }
 
-thead tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-}
-
-thead th {
+th {
   background-color: #f8f9fa;
   color: #666;
   text-align: left;
-  padding: 0.75rem;
+  padding: 12px 15px;
   border-bottom: 1px solid #ddd;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
 tbody {
@@ -203,25 +208,26 @@ tbody tr {
 }
 
 td {
-  padding: 0.75rem;
+  padding: 10px 15px;
   border-bottom: 1px solid #ddd;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-th:nth-child(1), td:nth-child(1) { width: 200px; }
-th:nth-child(2), td:nth-child(2) { width: 150px; }
-th:nth-child(3), td:nth-child(3) { width: 80px; }
-th:nth-child(4), td:nth-child(4) { width: 100px; }
-th:nth-child(5), td:nth-child(5) { width: 120px; }
-th:nth-child(6), td:nth-child(6) { width: 120px; }
-th:nth-child(7), td:nth-child(7) { width: 250px; }
+th:nth-child(1), td:nth-child(1) { width: 60px; }
+th:nth-child(2), td:nth-child(2) { width: 200px; }
+th:nth-child(3), td:nth-child(3) { width: 200px; }
+th:nth-child(4), td:nth-child(4) { width: 150px; white-space: nowrap; overflow: visible; text-overflow: clip; }
+th:nth-child(5), td:nth-child(5) { width: 80px; }
+th:nth-child(6), td:nth-child(6) { width: 150px; }
+th:nth-child(7), td:nth-child(7) { width: 80px; }
 th:nth-child(8), td:nth-child(8) { width: 100px; }
-th:nth-child(9), td:nth-child(9) { width: 100px; }
-th:nth-child(10), td:nth-child(10) { width: 150px; }
+th:nth-child(9), td:nth-child(9) { width: 120px; }
+th:nth-child(10), td:nth-child(10) { width: 100px; }
 th:nth-child(11), td:nth-child(11) { width: 150px; }
-th:nth-child(12), td:nth-child(12) { width: 200px; }
+th:nth-child(12), td:nth-child(12) { width: 150px; }
+th:nth-child(13), td:nth-child(13) { width: 300px; }
 
 tbody::-webkit-scrollbar {
   height: 8px;
@@ -230,6 +236,7 @@ tbody::-webkit-scrollbar {
 
 tbody::-webkit-scrollbar-track {
   background: #f1f1f1;
+  border-radius: 4px;
 }
 
 tbody::-webkit-scrollbar-thumb {
@@ -431,4 +438,16 @@ td a:hover {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* Make phone numbers fully visible */
+td:nth-child(4) {
+  overflow: visible;
+  white-space: nowrap;
+  text-overflow: clip;
+}
+
+/* Add hover effect for rows */
+tbody tr:hover {
+  background-color: #f8f9fa;
 }
