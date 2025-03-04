@@ -32,9 +32,6 @@ function App() {
       return;
     }
 
-    // Check if location is a pincode
-    const isPincode = /^\d{6}$/.test(location.trim());
-    
     setIsExtracting(true);
     setResults([]);
     setTotalResults(0);
@@ -51,44 +48,53 @@ function App() {
         body: JSON.stringify({
           query: keywords,
           location: location,
-          isPincode: isPincode,
+          isPincode: /^\d{6}$/.test(location.trim()),
           total: 100,
           extractEmail
         }),
         signal: abortController.signal
       });
 
-      if (response.ok) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n').filter(line => line.trim());
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-          for (const line of lines) {
-            const data = JSON.parse(line);
-            
-            if (data.type === 'update') {
-              setResults(prev => [...prev, data.data]);
-              setTotalResults(prev => prev + 1);
-              setProgress(data.progress);
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
 
-              if (startTime && data.progress > 0) {
-                const elapsedTime = (Date.now() - startTime) / 1000;
-                const itemsPerSecond = data.progress / elapsedTime;
-                const remainingItems = 100 - data.progress;
-                const estimatedSeconds = remainingItems / itemsPerSecond;
-                setEstimatedTime(Math.ceil(estimatedSeconds));
+        for (const line of lines) {
+          try {
+            if (line.trim()) {
+              const data = JSON.parse(line);
+              
+              if (data.type === 'update') {
+                setResults(prev => [...prev, data.data]);
+                setTotalResults(prev => prev + 1);
+                setProgress(data.progress);
+
+                if (startTime && data.progress > 0) {
+                  const elapsedTime = (Date.now() - startTime) / 1000;
+                  const itemsPerSecond = data.progress / elapsedTime;
+                  const remainingItems = 100 - data.progress;
+                  const estimatedSeconds = remainingItems / itemsPerSecond;
+                  setEstimatedTime(Math.ceil(estimatedSeconds));
+                }
+              } else if (data.type === 'complete') {
+                setProgress(100);
+                setEstimatedTime(0);
               }
-            } else if (data.type === 'complete') {
-              setProgress(100);
-              setEstimatedTime(0);
-              break;
             }
+          } catch (error) {
+            console.error('Error parsing line:', error);
           }
         }
       }
@@ -251,22 +257,17 @@ function App() {
                 <tr>
                   <th>S.No</th>
                   <th>Title</th>
-                  <th>Email</th>
                   <th>Phone</th>
                   <th>Website</th>
                   <th>Category</th>
                   <th>Rating</th>
                   <th>Reviews</th>
-                  
-                  
                   <th>Country Code</th>
-                  
-                  
                   <th>Pincode</th>
                   <th>City</th>
                   <th>State</th>
                   <th>Address</th>
-                  
+                  {extractEmail && <th>Email</th>}
                 </tr>
               </thead>
               <tbody>
@@ -274,7 +275,6 @@ function App() {
                   <tr key={index}>
                     <td>{index + 1}</td>
                     <td>{item?.name || 'N/A'}</td>
-                    <td>{typeof item?.email === 'string' ? item.email : 'N/A'}</td>
                     <td>{item?.phone || 'N/A'}</td>
                     <td>
                       {item?.website && item.website !== 'N/A' ? (
@@ -286,15 +286,12 @@ function App() {
                     <td>{item?.category || 'N/A'}</td>
                     <td>{item?.rating || 'N/A'}</td>
                     <td>{item?.reviews ? `(${item.reviews})` : 'N/A'}</td>
-                    
                     <td>{item?.countryCode || '+91'}</td>
-                    
-                    
                     <td>{item?.pincode || 'N/A'}</td>
                     <td>{item?.city || 'N/A'}</td>
                     <td>{item?.state || 'N/A'}</td>
                     <td>{typeof item?.address === 'string' ? item.address : 'N/A'}</td>
-                    
+                    {extractEmail && <td>{typeof item?.email === 'string' ? item.email : 'N/A'}</td>}
                   </tr>
                 ))}
               </tbody> 
