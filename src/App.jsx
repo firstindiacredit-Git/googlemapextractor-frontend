@@ -1,5 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './App.css';
+import { Resizable } from 'react-resizable';
+import 'react-resizable/css/styles.css';
+import { 
+  Layout, 
+  Typography, 
+  Button, 
+  Card, 
+  Input, 
+  Checkbox,
+  Space,
+  Progress,
+  Table,
+  Tag,
+  Divider,
+  Row,
+  Col,
+  Statistic,
+  Tooltip,
+  Badge,
+  Dropdown,
+  Avatar,
+  Menu
+} from 'antd';
+import { 
+  DownloadOutlined,
+  SearchOutlined,
+  ClearOutlined,
+  PlayCircleOutlined,
+  StopOutlined,
+  EditOutlined,
+  GlobalOutlined,
+  PhoneOutlined,
+  EnvironmentFilled,
+  EnvironmentOutlined,
+  StarOutlined,
+  MailOutlined,
+  LoadingOutlined,
+  LogoutOutlined,
+  UserOutlined,
+  SettingOutlined
+} from '@ant-design/icons';
+import PhoneInTalkRoundedIcon from '@mui/icons-material/PhoneInTalkRounded';
+import PublicIcon from '@mui/icons-material/Public';
+import Confetti from 'react-confetti';
+import { auth } from './firebase';
+import { 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut
+} from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+
+const { Header, Content } = Layout;
+const { Title, Text } = Typography;
+const { Search } = Input;
+
+// Update the ResizableTitle component to be memoized
+const ResizableTitle = React.memo(({ onResize, width, ...restProps }) => {
+  if (!width) {
+    return <th {...restProps} />;
+  }
+
+  return (
+    <Resizable
+      width={width}
+      height={0}
+      handle={
+        <span
+          className="react-resizable-handle"
+          onClick={(e) => e.stopPropagation()}
+        />
+      }
+      onResize={onResize}
+      draggableOpts={{ enableUserSelectHack: false }}
+    >
+      <th {...restProps} />
+    </Resizable>
+  );
+});
 
 function App() {
   const [keywords, setKeywords] = useState('');
@@ -14,6 +93,39 @@ function App() {
   const [estimatedTime, setEstimatedTime] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showResults, setShowResults] = useState(false);
+  const [columnWidths, setColumnWidths] = useState({});
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [wasExtracting, setWasExtracting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      setUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (isExtracting) {
+      setWasExtracting(true);
+    }
+    
+    if (!isExtracting && wasExtracting && results.length > 0 && progress === 100) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+        setWasExtracting(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isExtracting, wasExtracting, results.length, progress]);
 
   const handleStartExtract = async () => {
     if (isExtracting) {
@@ -26,6 +138,7 @@ function App() {
         setIsExtracting(false);
         setProgress(0);
         setEstimatedTime(null);
+        setWasExtracting(false);
       } catch (error) {
         console.error('Error stopping extraction:', error);
       }
@@ -37,6 +150,7 @@ function App() {
     setTotalResults(0);
     setProgress(0);
     setStartTime(Date.now());
+    setShowResults(true);
 
     const abortController = new AbortController();
     setController(abortController);
@@ -141,166 +255,462 @@ function App() {
     setTotalResults(0);
   };
 
-  // Add search filter function
-  const filteredResults = results.filter(item => {
-    if (!searchTerm) return true;
-    
-    // Convert search term to string and remove spaces
-    const search = searchTerm.toString().trim().toLowerCase();
-    
-    // Check if search is a pincode (6 digits)
-    const isPincodeSearch = /^\d{6}$/.test(search);
-    
-    if (isPincodeSearch) {
-      // If searching by pincode, match exactly
-      return item.pincode === search;
-    } else {
-      // Otherwise search in all fields
-      return (
-        item.name?.toLowerCase().includes(search) ||
-        item.address?.toLowerCase().includes(search) ||
-        item.city?.toLowerCase().includes(search) ||
-        item.state?.toLowerCase().includes(search) ||
-        item.pincode?.includes(search)
-      );
-    }
-  });
+  // Update handleResize to use useCallback with columnWidths dependency
+  const handleResize = useCallback((index) => (_, { size }) => {
+    setColumnWidths(prev => {
+      const newWidths = { ...prev };
+      newWidths[index] = size.width;
+      return newWidths;
+    });
+  }, []);
 
-  return (
-    <div className="main-container">
-      <header>
-        <h1>Google Map Extractor</h1>
-        <button 
-          className="download-excel"
-          onClick={handleDownload}
-          disabled={results.length === 0}
-        >
-          <span>⬇️</span> Download Excel
-        </button>
-      </header>
-
-      <div className="content">
-        <div className="sidebar">
-          <div className="keyword-section">
-            <h3>Keywords (1)</h3>
-            <input
-              type="text"
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
-              placeholder="Enter keywords..."
-            />
+  // Move columns definition outside of component or use useMemo with proper dependencies
+  const columns = useMemo(() => [
+    {
+      title: 'S.No',
+      dataIndex: 'index',
+      key: 'index',
+      width: 70,
+      render: (_, __, index) => ((currentPage - 1) * pageSize) + index + 1,
+      resizable: true,
+    },
+    {
+      title: 'Title',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text) => text ? (
+        <Tooltip title={text}>
+          <div className="truncate">{text}</div>
+        </Tooltip>
+      ) : 'N/A',
+      resizable: true,
+    },
+    {
+      title: 'Country Code',
+      dataIndex: 'countryCode',
+      key: 'countryCode',
+      render: (text) => text || '+91',
+      resizable: true,
+    },
+    {
+      title: 'Phone',
+      dataIndex: 'phone',
+      key: 'phone',
+      render: (text) => text ? (
+        <Tooltip title={text}>
+          <div className="truncate">
+            <PhoneInTalkRoundedIcon style={{ color: '#4caf50' }} />
+            {text === 'N/A' ? text : text.slice(1)}
           </div>
-          <div className="location-section">
-            <h3>Location</h3>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter location..."
-            />
-          </div>
-          
-          {isExtracting && (
-            <div className="compact-progress">
-              <div className="progress-info">
-                <span>{totalResults}/100</span>
-                <span>{Math.round(progress)}%</span>
-                {estimatedTime > 0 && (
-                  <span>{Math.floor(estimatedTime / 60)}m {estimatedTime % 60}s</span>
-                )}
-              </div>
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
+        </Tooltip>
+      ) : 'N/A',
+      resizable: true,
+    },
+    {
+      title: 'Website',
+      dataIndex: 'website',
+      key: 'website',
+      render: (text) => (
+        <div className="truncate">
+          <PublicIcon style={{ color: '#4caf50' }} />
+          {text && text !== 'N/A' ? (
+            <Button 
+              type="link" 
+              style={{ padding: '0 0 0 4px' }}
+              href={text} 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              Visit
+            </Button>
+          ) : (
+            <span style={{ marginLeft: '4px' }}>N/A</span>
           )}
         </div>
+      ),
+      resizable: true,
+    },
+    {
+      title: 'Category',
+      dataIndex: 'category',
+      key: 'category',
+      render: (text) => text ? (
+        <Tooltip title={text}>
+          <div className="truncate">
+            <Tag color="blue">{text}</Tag>
+          </div>
+        </Tooltip>
+      ) : 'N/A',
+      resizable: true,
+    },
+    {
+      title: 'Rating',
+      dataIndex: 'rating',
+      key: 'rating',
+      render: (text) => text ? (
+        <Space>
+          <StarOutlined style={{ color: '#fadb14' }} />
+          {text}
+        </Space>
+      ) : 'N/A',
+      resizable: true,
+    },
+    {
+      title: 'Reviews',
+      dataIndex: 'reviews',
+      key: 'reviews',
+      render: (text) => text ? `(${text})` : 'N/A',
+      resizable: true,
+    },
+    {
+      title: 'Pincode',
+      dataIndex: 'pincode',
+      key: 'pincode',
+      render: (text) => text || 'N/A',
+      resizable: true,
+    },
+    {
+      title: 'City',
+      dataIndex: 'city',
+      key: 'city',
+      render: (text) => {
+        if (!text) return 'N/A';
+        return (
+          <Tooltip title={text}>
+            <div className="truncate">
+              {text}
+            </div>
+          </Tooltip>
+        );
+      },
+      resizable: true,
+    },
+    {
+      title: 'State',
+      dataIndex: 'state',
+      key: 'state',
+      render: (text) => text || 'N/A',
+      resizable: true,
+    },
+    {
+      title: 'Address',
+      dataIndex: 'address',
+      key: 'address',
+      render: (text) => {
+        if (typeof text !== 'string') return 'N/A';
+        return (
+          <Tooltip title={text}>
+            <div className="truncate">
+              < EnvironmentFilled style={{ color: '#4caf50' }} />
+              {text.slice(1, 100)}
+            </div>
+          </Tooltip>
+        );
+      },
+      resizable: true,
+    },
+  ], [currentPage, pageSize]); // Add currentPage and pageSize to dependencies
 
-        <div className="main-content">
-          <div className="action-bar">
-            <div className="results-badge">
-              {totalResults} RESULTS FOUND
-            </div>
-            <button className="clear-btn" onClick={handleClearData}>Clear Data</button>
-            <div className="options-section">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={extractEmail}
-                  onChange={(e) => setExtractEmail(e.target.checked)}
-                />
-                Extract Email (Slower)
-              </label>
-            </div>
-            <button 
-              className="start-extracting-btn"
-              onClick={handleStartExtract}
-            >
-              {isExtracting ? 'Stop Extracting' : 'Start Extracting'}
-            </button>
-            <div className="search-box">
-              <input 
-                type="text" 
-                placeholder="Search by pincode or text..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+  // Memoize the email column addition
+  const finalColumns = useMemo(() => {
+    let cols = [...columns];
+    if (extractEmail) {
+      cols.push({
+        title: 'Email',
+        dataIndex: 'email',
+        key: 'email',
+        render: (text) => typeof text === 'string' ? (
+          <Space>
+            <MailOutlined />
+            {text}
+          </Space>
+        ) : 'N/A',
+      });
+    }
+    return cols;
+  }, [columns, extractEmail]);
+
+  // Update resizableColumns memoization
+  const resizableColumns = useMemo(() => 
+    finalColumns.map((col, index) => ({
+      ...col,
+      width: columnWidths[index] || col.width || 150,
+      onHeaderCell: (column) => ({
+        width: column.width,
+        onResize: handleResize(index),
+      }),
+    })),
+    [finalColumns, columnWidths, handleResize]
+  );
+
+  // Memoize filtered results
+  const memoizedFilteredResults = useMemo(() => 
+    results.filter(item => {
+      if (!searchTerm) return true;
+      
+      const search = searchTerm.toString().trim().toLowerCase();
+      const isPincodeSearch = /^\d{6}$/.test(search);
+      
+      if (isPincodeSearch) {
+        return item.pincode === search;
+      } else {
+        return (
+          item.name?.toLowerCase().includes(search) ||
+          item.address?.toLowerCase().includes(search) ||
+          item.city?.toLowerCase().includes(search) ||
+          item.state?.toLowerCase().includes(search) ||
+          item.pincode?.includes(search)
+        );
+      }
+    }),
+    [results, searchTerm]
+  );
+
+  // Memoize ResizableTitle component
+  const MemoizedResizableTitle = useMemo(() => React.memo(ResizableTitle), []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Error logging in:', error.message);
+    }
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Error signing up:', error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error.message);
+    }
+  };
+
+  const profileMenu = (
+    <Menu>
+      <Menu.Item key="profile" onClick={() => navigate('/profile')}>
+        <UserOutlined /> Profile
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="logout" onClick={handleLogout} danger>
+        <LogoutOutlined /> Logout
+      </Menu.Item>
+    </Menu>
+  );
+
+  return (
+    <Layout className="app-layout">
+      <Header className="app-header">
+        <div className="header-content">
+          <div className="logo">
+            <img 
+              src="https://cdn-icons-png.flaticon.com/512/2642/2642502.png" 
+              alt="Logo" 
+              className="logo-image" 
+            />
+            <div className="title-container">
+              <Title level={3} style={{ color: 'white', margin: 0 }}>
+                Google Map Extractor
+              </Title>
+              <Text style={{ color: 'rgba(255, 255, 255, 0.65)', fontSize: '12px' }}>
+                Extract business data from Google Maps
+              </Text>
             </div>
           </div>
-
-          <div className="results-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>S.No</th>
-                  <th>Title</th>
-                  <th>Phone</th>
-                  <th>Website</th>
-                  <th>Category</th>
-                  <th>Rating</th>
-                  <th>Reviews</th>
-                  <th>Country Code</th>
-                  <th>Pincode</th>
-                  <th>City</th>
-                  <th>State</th>
-                  <th>Address</th>
-                  {extractEmail && <th>Email</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredResults.map((item, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>{item?.name || 'N/A'}</td>
-                    <td>{item?.phone || 'N/A'}</td>
-                    <td>
-                      {item?.website && item.website !== 'N/A' ? (
-                        <a href={item.website} target="_blank" rel="noopener noreferrer">
-                          Visit
-                        </a>
-                      ) : 'N/A'}
-                    </td>
-                    <td>{item?.category || 'N/A'}</td>
-                    <td>{item?.rating || 'N/A'}</td>
-                    <td>{item?.reviews ? `(${item.reviews})` : 'N/A'}</td>
-                    <td>{item?.countryCode || '+91'}</td>
-                    <td>{item?.pincode || 'N/A'}</td>
-                    <td>{item?.city || 'N/A'}</td>
-                    <td>{item?.state || 'N/A'}</td>
-                    <td>{typeof item?.address === 'string' ? item.address : 'N/A'}</td>
-                    {extractEmail && <td>{typeof item?.email === 'string' ? item.email : 'N/A'}</td>}
-                  </tr>
-                ))}
-              </tbody> 
-            </table>
+          
+          <div className="header-actions">
+            <Space>
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleDownload}
+                className="download-button"
+              >
+                Download Excel
+              </Button>
+              <Dropdown overlay={profileMenu} trigger={['click']}>
+                <Space className="profile-trigger" style={{ cursor: 'pointer' }}>
+                  <Avatar 
+                    size="small" 
+                    icon={<UserOutlined />} 
+                    src={auth.currentUser?.photoURL}
+                  />
+                  <span style={{ color: 'white' }}>
+                    {auth.currentUser?.displayName || auth.currentUser?.email}
+                  </span>
+                </Space>
+              </Dropdown>
+            </Space>
           </div>
         </div>
-      </div>
-    </div>
+      </Header>
+
+      <Content className="app-content">
+        <Row gutter={[16, 16]}>
+          {/* Left side - Search Criteria */}
+          <Col xs={24} md={8} lg={6} xl={5}>
+            <Card 
+              title={<Title level={4} style={{ textAlign: 'center', margin: 0 }}>SEARCH CRITERIA</Title>}
+              bordered={false}
+              className="search-card"
+            >
+              <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                <Input
+                  placeholder="Keywords (e.g. restaurants, hotels)"
+                  size="large"
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  prefix={<SearchOutlined />}
+
+                />
+                
+                <Input
+                  placeholder="Location (city name or pincode)"
+                  size="large"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  prefix={<EnvironmentOutlined />}
+                />
+                
+                <Checkbox
+                  checked={extractEmail}
+                  onChange={(e) => setExtractEmail(e.target.checked)}
+                >
+                  Extract Email (Slower)
+                </Checkbox>
+                
+                <Button
+                  type="primary"
+                  icon={isExtracting ? <StopOutlined /> : <PlayCircleOutlined />}
+                  danger={isExtracting}
+                  size="large"
+                  onClick={handleStartExtract}
+                  block
+                >
+                  {isExtracting ? 'Stop Extracting' : 'Start Extracting'}
+                </Button>
+                
+                {isExtracting && (
+                  <div className="progress-mini">
+                    <Progress 
+                      percent={Math.round(progress)} 
+                      status="active"
+                      size="small"
+                      strokeColor={{
+                        '0%': '#108ee9',
+                        '100%': '#87d068',
+                      }}
+                    />
+                    <div className="progress-stats">
+                      {/* <Text>{totalResults}</Text> */}
+                      {estimatedTime > 0 && (
+                        <Text>Est: {Math.floor(estimatedTime / 60)}m {estimatedTime % 60}s</Text>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                <Button
+                  danger
+                  icon={<ClearOutlined />}
+                  onClick={handleClearData}
+                  disabled={isExtracting || results.length === 0}
+                  block
+                >
+                  Clear Results
+                </Button>
+              </Space>
+            </Card>
+          </Col>
+          
+          {/* Right side - Results Table */}
+          <Col xs={24} md={16} lg={18} xl={19}>
+            <Card bordered={false} className="results-card">
+              <div className="results-header">
+                <Badge 
+                  count={totalResults} 
+                  overflowCount={999}
+                  style={{ backgroundColor: '#52c41a'}}
+                >
+                  <Title level={4} style={{ margin: 0 }}>RESULTS</Title>
+                </Badge>
+                
+                <Search
+                  placeholder="Search results..."
+                  allowClear
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ width: 250 }}
+                />
+              </div>
+              
+              {isExtracting && (
+                <div className="modern-loading-container">
+                  <div className="pulse-container">
+                    <div className="pulse-circle"></div>
+                    <div className="pulse-circle"></div>
+                    <div className="pulse-circle"></div>
+                  </div>
+                  <div className="loading-bar-container">
+                    <div className="loading-bar"></div>
+                  </div>
+                  <div className="loading-text">
+                    <span className="loading-dot"></span>
+                    <span className="loading-dot"></span>
+                    <span className="loading-dot"></span>
+                    <span>Extracting data from Google Maps</span>
+                  </div>
+                </div>
+              )}
+              
+              <Table
+                columns={resizableColumns}
+                dataSource={memoizedFilteredResults}
+                rowKey={(record, index) => index}
+                pagination={{
+                  current: currentPage,
+                  pageSize: pageSize,
+                  total: memoizedFilteredResults.length,
+                  onChange: (page, size) => {
+                    setCurrentPage(page);
+                    setPageSize(size);
+                  },
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+                  pageSizeOptions: ['10', '20', '50', '100', '150'],
+                  position: ['bottomCenter']
+                }}
+                scroll={{ x: 'max-content', y: 'calc(100vh - 300px)' }}
+                bordered
+                size="middle"
+                loading={false}
+                locale={{ emptyText: 'No data yet. Start extracting to see results.' }}
+                components={{
+                  header: {
+                    cell: MemoizedResizableTitle,
+                  },
+                }}
+                className="excel-like-table custom-scrollbar"
+              />
+            </Card>
+          </Col>
+        </Row>
+      </Content>
+      {showConfetti && <Confetti />}
+    </Layout>
   );
 }
 
-export default App;
+// Memoize the entire App component
+export default React.memo(App);

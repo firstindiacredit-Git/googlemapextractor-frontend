@@ -1,463 +1,520 @@
-* {
+body {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f0f2f5;
 }
 
-.main-container {
+.app-layout {
   min-height: 100vh;
-  height: 100vh;
-  background-color: #f8f9fa;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
-header {
+.app-header {
+  padding: 0 24px;
+  box-shadow: 0 2px 8px rgba(163, 136, 136, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 64px;
   background-color: #dc3545;
-  padding: 1rem 2rem;
+}
+
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
-header h1 {
-  color: white;
-  font-size: 1.5rem;
-  font-weight: 500;
-}
-
-.download-excel {
-  background-color: white;
-  color: #dc3545;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
+.logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 12px;
 }
 
-.content {
+.logo-image {
+  width: 36px;
+  height: 36px;
+  filter: brightness(0) invert(1);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(0.8);
+  }
+}
+
+.title-container {
   display: flex;
-  padding: 1rem;
-  gap: 1rem;
+  flex-direction: column;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.stats-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.download-button {
+  background: #4caf50;
+  border-color: #4caf50;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.045);
+  transition: all 0.3s;
+}
+
+.download-button:hover:enabled {
+  background: #43a047;
+  border-color: #43a047;
+  transform: translateY(-1px);
+}
+
+.download-button:disabled {
+  background: #a5d6a7;
+  border-color: #a5d6a7;
+}
+
+.app-content {
+  padding: 16px;
   height: calc(100vh - 64px);
-  overflow: hidden;
+  overflow: auto;
 }
 
-.sidebar {
-  width: 250px;
-  padding: 1rem;
-  background: white;
+.search-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.search-card {
+  height: calc(100vh - 96px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.results-card {
+  height: calc(100vh - 96px);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
 }
 
-.keyword-section,
-.location-section {
-  margin-bottom: 0.5rem;
-}
-
-.keyword-section h3,
-.location-section h3 {
-  color: #666;
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.sidebar input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.main-content {
-  flex: 1;
-  background: white;
-  border-radius: 4px;
-  padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.results-header {
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.progress-mini {
+  margin-top: 8px;
+}
+
+.progress-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.criteria-summary {
+  background-color: #f9f9f9;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.progress-section {
+  margin: 16px 0;
+  padding: 16px;
+  background-color: #f6ffed;
+  border-radius: 6px;
+  border: 1px solid #b7eb8f;
 }
 
 .action-bar {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding: 15px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  margin: 16px 0;
 }
 
-.results-badge {
-  background-color: #20c997;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+/* Custom scrollbar styles */
+.custom-scrollbar .ant-table-body {
+  scrollbar-width: thin;
+  scrollbar-color: #8c8c8c #f0f0f0;
 }
 
-.clear-btn,
-.extract-email-btn {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-}
-
-.start-extracting-btn {
-  background-color: #20c997;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.start-extracting-btn:hover {
-  background-color: #1ba97f;
-}
-
-/* Add style for stop state */
-.start-extracting-btn[data-extracting="true"] {
-  background-color: #dc3545;
-}
-
-.start-extracting-btn[data-extracting="true"]:hover {
-  background-color: #c82333;
-}
-
-.search-box {
-  margin-left: auto;
-  position: relative;
-}
-
-.search-box input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  width: 200px;
-  font-size: 0.9rem;
-}
-
-.search-box input:focus {
-  outline: none;
-  border-color: #20c997;
-  box-shadow: 0 0 0 2px rgba(32, 201, 151, 0.1);
-}
-
-.results-table {
-  flex: 1;
-  position: relative;
-  margin-top: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow: auto;
-  min-height: 200px;
-  background: white;
-}
-
-table {
-  table-layout: fixed;
-  min-width: 1840px;
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-thead {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: #f8f9fa;
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-}
-
-th {
-  background-color: #f8f9fa;
-  color: #666;
-  text-align: left;
-  padding: 12px 15px;
-  border-bottom: 1px solid #ddd;
-  font-weight: 500;
-}
-
-tbody {
-  display: block;
-  height: calc(100vh - 250px);
-  overflow-y: auto;
-}
-
-tbody tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-}
-
-td {
-  padding: 10px 15px;
-  border-bottom: 1px solid #ddd;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-th:nth-child(1), td:nth-child(1) { width: 60px; }
-th:nth-child(2), td:nth-child(2) { width: 180px; }
-th:nth-child(3), td:nth-child(3) { width: 120px; }
-th:nth-child(4), td:nth-child(4) { width: 80px; }
-th:nth-child(5), td:nth-child(5) { width: 120px; }
-th:nth-child(6), td:nth-child(6) { width: 80px; }
-th:nth-child(7), td:nth-child(7) { width: 100px; }
-th:nth-child(8), td:nth-child(8) { width: 100px; }
-th:nth-child(9), td:nth-child(9) { width: 100px; }
-th:nth-child(10), td:nth-child(10) { width: 120px; }
-th:nth-child(11), td:nth-child(11) { width: 120px; }
-th:nth-child(12), td:nth-child(12) { width: 260px; }
-th:nth-child(13), td:nth-child(13) { width: 200px; }
-
-td:nth-child(3) {
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
-}
-
-.results-table {
-  overflow-x: auto;
-  margin-top: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-}
-
-tbody::-webkit-scrollbar {
+.custom-scrollbar .ant-table-body::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-tbody::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.custom-scrollbar .ant-table-body::-webkit-scrollbar-track {
+  background: #f0f0f0;
   border-radius: 4px;
 }
 
-tbody::-webkit-scrollbar-thumb {
-  background: #888;
+.custom-scrollbar .ant-table-body::-webkit-scrollbar-thumb {
+  background: #8c8c8c;
   border-radius: 4px;
+  transition: background 0.3s;
 }
 
-tbody::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.custom-scrollbar .ant-table-body::-webkit-scrollbar-thumb:hover {
+  background: #595959;
 }
 
-td a {
-  color: #007bff;
-  text-decoration: none;
+/* For horizontal scrollbar */
+.custom-scrollbar .ant-table-body::-webkit-scrollbar-corner {
+  background: #f0f0f0;
 }
 
-td a:hover {
-  text-decoration: underline;
+/* Ant Design table customizations */
+.ant-table-cell {
+  white-space: nowrap;
 }
 
-/* Add these styles */
-.options-section {
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
+.ant-table-thead > tr > th {
+  background-color: #f0f5ff;
+  font-weight: 600;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #495057;
-  font-size: 0.9rem;
+.ant-table-row:hover {
+  background-color: #e6f7ff !important;
 }
 
-.checkbox-label input[type="checkbox"] {
-  width: auto;
-  margin: 0;
-}
-
-/* Add these styles to your existing CSS */
-
-.progress-section {
-  width: 100%;
-  margin: 10px 0;
-  padding: 0 15px;
-  opacity: 0.8;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: #eee;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #4CAF50;
-  transition: width 0.3s ease;
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-  font-size: 12px;
-  color: #666;
-}
-
-.start-extracting-btn.extracting {
-  background-color: #ff4444;
-}
-
-.start-extracting-btn.extracting:hover {
-  background-color: #cc0000;
-}
-
-/* Update existing styles */
-.action-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 15px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-/* Add these new styles for sidebar progress */
-.sidebar-progress {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.sidebar-progress h3 {
-  color: #495057;
-  font-size: 0.9rem;
-  margin-bottom: 12px;
-}
-
-.progress-stats {
-  margin-bottom: 12px;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-.stat-item:last-child {
-  margin-bottom: 0;
-}
-
-.sidebar-progress-bar {
-  width: 100%;
-  height: 6px;
-  background-color: #e9ecef;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 10px;
-}
-
-.sidebar-progress-fill {
-  height: 100%;
-  background-color: #20c997;
-  transition: width 0.3s ease;
-}
-
-/* Remove the old progress styles and add these new ones */
-.compact-progress {
-  margin-top: 10px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 4px;
-  border: 1px solid #e9ecef;
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-  font-size: 12px;
-  color: #6c757d;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 4px;
-  background-color: #e9ecef;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #20c997;
-  transition: width 0.3s ease;
-}
-
-/* Add loading styles */
-.table-loading {
+/* Modern Loading Animation */
+.modern-loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: #666;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  margin-bottom: 10px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #20c997;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Optional: Add fade-in animation for results */
-.results-table table {
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Add hover effect for rows */
-tbody tr:hover {
+  margin-bottom: 20px;
+  padding: 15px;
   background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Pulsing circles animation */
+.pulse-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.pulse-circle {
+  width: 12px;
+  height: 12px;
+  margin: 0 6px;
+  border-radius: 50%;
+  background-color: #4285F4; /* Google blue */
+  animation: pulse-animation 1.5s infinite ease-in-out;
+}
+
+.pulse-circle:nth-child(2) {
+  animation-delay: 0.2s;
+  background-color: #DB4437; /* Google red */
+}
+
+.pulse-circle:nth-child(3) {
+  animation-delay: 0.4s;
+  background-color: #F4B400; /* Google yellow */
+}
+
+@keyframes pulse-animation {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+}
+
+/* Loading bar animation */
+.loading-bar-container {
+  width: 100%;
+  height: 4px;
+  background-color: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.loading-bar {
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, #4285F4, #0F9D58, #F4B400, #DB4437);
+  background-size: 400% 400%;
+  animation: loading-bar-animation 3s infinite ease;
+  border-radius: 2px;
+}
+
+@keyframes loading-bar-animation {
+  0% {
+    background-position: 0% 50%;
+    transform: translateX(-100%);
+  }
+  50% {
+    background-position: 100% 50%;
+    transform: translateX(320%); 
+  }
+  100% {
+    background-position: 0% 50%;
+    transform: translateX(-100%);
+  }
+}
+
+/* Loading text with dots animation */
+.loading-text {
+  display: flex;
+  align-items: center;
+  color: #5f6368;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.loading-dot {
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background-color: #5f6368;
+  display: inline-block;
+  animation: loading-dot-animation 1.4s infinite ease-in-out both;
+}
+
+.loading-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loading-dot-animation {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* Customize the loading icon color */
+.anticon-loading {
+  color: #4285F4;
+}
+
+/* Excel-like table styling */
+.excel-like-table {
+  border: 1px solid #e8e8e8;
+  background-color: white;
+}
+
+.excel-like-table .ant-table-thead > tr > th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  border-right: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 8px;
+  position: relative;
+}
+
+.excel-like-table .ant-table-tbody > tr > td {
+  border-right: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 8px;
+}
+
+.excel-like-table .ant-table-tbody > tr:hover > td {
+  background-color: #e6f7ff;
+}
+
+.excel-like-table .ant-table-tbody > tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Resizable handle styling */
+.react-resizable {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  z-index: 1;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+.react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 20px;
+  background-color: #ccc;
+  transition: background-color 0.3s;
+}
+
+.react-resizable-handle:hover::after {
+  background-color: #1890ff;
+}
+
+/* Add row selection highlight */
+.excel-like-table .ant-table-tbody > tr.ant-table-row-selected > td {
+  background-color: #e6f7ff;
+}
+
+/* Add cell selection styles */
+.excel-like-table .ant-table-cell-selected {
+  background-color: rgba(24, 144, 255, 0.1);
+  border: 2px solid #1890ff;
+}
+
+/* Add truncate styles */
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Customize table cell styles */
+.excel-like-table .ant-table-cell {
+  padding: 8px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0; /* This is important for truncation to work */
+}
+
+/* Ensure icons and text align properly */
+.excel-like-table .anticon {
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Ensure tags don't break layout */
+.excel-like-table .ant-tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Add hover effect to show truncated content */
+.excel-like-table .ant-table-cell:hover .truncate {
+  overflow: visible;
+  white-space: normal;
+  word-break: break-word;
+  position: relative;
+}
+
+.auth-container {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.auth-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-container input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.auth-container button {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.auth-container button:hover {
+  background-color: #0056b3;
+}
+
+.auth-container .google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #fff;
+  color: #757575;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 0 16px;
+  font-weight: 500;
+  height: 40px;
+  transition: background-color 0.3s;
+}
+
+.auth-container .google-button:hover {
+  background-color: #f8f9fa;
+  border-color: #dadce0;
+  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+}
+
+.auth-container .ant-divider {
+  margin: 24px 0;
+  color: #5f6368;
+}
+
+.profile-trigger {
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.profile-trigger:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.ant-tabs-nav {
+  margin-bottom: 2rem !important;
+}
+
+.ant-card-body {
+  padding: 2rem;
+}
+
+@media (max-width: 576px) {
+  .ant-card-body {
+    padding: 1rem;
+  }
 }
