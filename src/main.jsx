@@ -8,11 +8,13 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/Profile';
 import './index.css';
 import LogoutOnUnload from './components/LogoutOnUnload';
+import AuthStateListener from './components/AuthStateListener';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-    <LogoutOnUnload />
+      <AuthStateListener />
+      <LogoutOnUnload />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

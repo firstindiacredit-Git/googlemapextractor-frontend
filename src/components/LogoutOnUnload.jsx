@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase';
-import { setUserLoggedOut } from '../../loginStatusService';
+import { setUserLoggedOut } from '../services/loginStatusService';
 
 function LogoutOnUnload() {
   const [user] = useAuthState(auth);

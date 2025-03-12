@@ -1,103 +1,95 @@
 import React, { useState } from 'react';
+import { Form, Input, Button, Card, Typography, Divider, message, Modal } from 'antd';
+import { GoogleOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
 import { auth, googleProvider } from '../firebase';
 import { 
   signInWithEmailAndPassword, 
-  signInWithPopup,
+  signInWithPopup, 
   sendEmailVerification 
 } from 'firebase/auth';
 import { useNavigate, Link } from 'react-router-dom';
-import { Card, Input, Button, Typography, message, Divider, Alert, Form, Modal } from 'antd';
-import { GoogleOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
-import { isUserLoggedIn, setUserLoggedIn } from '../../loginStatusService';
+import { 
+  isUserLoggedIn, 
+  setUserLoggedIn, 
+  forceLoginOnThisDevice 
+} from '../services/loginStatusService';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 function Login() {
-  const [loading, setLoading] = useState(false);
-  const [needsVerification, setNeedsVerification] = useState(false);
-  const [error, setError] = useState('');
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [needsVerification, setNeedsVerification] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (values) => {
     setLoading(true);
     setError('');
-    
-    try {
-      console.log('Attempting login with:', values.email);
-      
-      if (!values.email || !values.password) {
-        throw new Error('Email and password are required');
-      }
 
+    try {
+      // Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(
-        auth, 
+        auth,
         values.email.trim(),
         values.password
       );
-      
-      console.log('Login successful:', userCredential.user.email);
 
-      if (!userCredential.user.emailVerified) {
-        console.log('Email not verified, sending verification...');
-        await sendEmailVerification(userCredential.user);
+      const user = userCredential.user;
+
+      // Check if email is verified
+      if (!user.emailVerified) {
+        await sendEmailVerification(user);
         setNeedsVerification(true);
+        await auth.signOut();
         setLoading(false);
         return;
       }
 
-      const userId = userCredential.user.uid;
-      const alreadyLoggedIn = await isUserLoggedIn(userId);
-      
-      if (alreadyLoggedIn) {
-        console.log('User is already logged in, showing warning and signing out');
-        Modal.warning({
+      // Check if user is already logged in
+      const loginStatus = await isUserLoggedIn(user.uid);
+      console.log('Login status:', loginStatus);
+
+      if (loginStatus.isLoggedIn && !loginStatus.deviceMatch) {
+        // User is logged in on another device
+        Modal.confirm({
           title: 'Already Logged In',
-          content: 'You are already logged in on another device. Please log out from that device first.',
+          content: (
+            <div>
+              <p>You are already logged in on another device:</p>
+              <p><strong>Device:</strong> {loginStatus.savedDevice?.userAgent || 'Unknown device'}</p>
+              <p><strong>Last Login:</strong> {new Date(loginStatus.savedDevice?.timestamp || Date.now()).toLocaleString()}</p>
+              <p>Would you like to log out from that device and continue on this one?</p>
+            </div>
+          ),
+          okText: 'Yes, continue on this device',
+          cancelText: 'No, cancel',
           onOk: async () => {
+            try {
+              await forceLoginOnThisDevice(user.uid);
+              message.success('Logged in successfully. Other sessions have been terminated.');
+              navigate('/');
+            } catch (error) {
+              message.error('Failed to log in on this device: ' + error.message);
+              await auth.signOut();
+            }
+          },
+          onCancel: async () => {
             await auth.signOut();
           }
         });
+        setLoading(false);
         return;
       }
 
-      await setUserLoggedIn(userId);
-      
-      message.success('Login successful!');
+      // Regular login
+      await setUserLoggedIn(user.uid);
+      message.success('Logged in successfully!');
       navigate('/');
     } catch (error) {
-      console.error('Login error:', error.code, error.message);
-      
-      let errorMessage = 'An error occurred during login.';
-      
-      switch (error.code) {
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email address.';
-          break;
-        case 'auth/wrong-password':
-          errorMessage = 'Incorrect password.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Invalid email address format.';
-          break;
-        case 'auth/user-disabled':
-          errorMessage = 'This account has been disabled.';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many failed attempts. Please try again later.';
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = 'Network error. Please check your internet connection.';
-          break;
-        case 'auth/invalid-credential':
-          errorMessage = 'Invalid login credentials.';
-          break;
-        default:
-          errorMessage = `Error: ${error.message}`;
-      }
-      
-      setError(errorMessage);
-      message.error(errorMessage);
+      console.error('Login error:', error);
+      setError(getErrorMessage(error));
+      message.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -106,129 +98,132 @@ function Login() {
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      const userId = result.user.uid;
-      
-      const alreadyLoggedIn = await isUserLoggedIn(userId);
-      
-      if (alreadyLoggedIn) {
-        console.log('User is already logged in, showing warning and signing out');
-        Modal.warning({
+      const user = result.user;
+
+      // Check if user is already logged in
+      const loginStatus = await isUserLoggedIn(user.uid);
+      console.log('Google login status:', loginStatus);
+
+      if (loginStatus.isLoggedIn && !loginStatus.deviceMatch) {
+        // User is logged in on another device
+        Modal.confirm({
           title: 'Already Logged In',
-          content: 'You are already logged in on another device. Please log out from that device first.',
+          content: (
+            <div>
+              <p>You are already logged in on another device:</p>
+              <p><strong>Device:</strong> {loginStatus.savedDevice?.userAgent || 'Unknown device'}</p>
+              <p><strong>Last Login:</strong> {new Date(loginStatus.savedDevice?.timestamp || Date.now()).toLocaleString()}</p>
+              <p>Would you like to log out from that device and continue on this one?</p>
+            </div>
+          ),
+          okText: 'Yes, continue on this device',
+          cancelText: 'No, cancel',
           onOk: async () => {
+            try {
+              await forceLoginOnThisDevice(user.uid);
+              message.success('Logged in successfully. Other sessions have been terminated.');
+              navigate('/');
+            } catch (error) {
+              message.error('Failed to log in on this device: ' + error.message);
+              await auth.signOut();
+            }
+          },
+          onCancel: async () => {
             await auth.signOut();
           }
         });
         return;
       }
-      
-      await setUserLoggedIn(userId);
-      
-      message.success('Login successful!');
+
+      // Regular login
+      await setUserLoggedIn(user.uid);
+      message.success('Logged in successfully with Google!');
       navigate('/');
     } catch (error) {
-      message.error('Failed to login with Google. Please try again.');
+      console.error('Google login error:', error);
+      message.error(getErrorMessage(error));
     }
   };
 
-  const handleResendVerification = async () => {
-    try {
-      const values = form.getFieldsValue();
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      await sendEmailVerification(userCredential.user);
-      message.success('Verification email resent!');
-    } catch (error) {
-      message.error('Failed to resend verification email. Please try again.');
+  // Helper function to extract error messages
+  const getErrorMessage = (error) => {
+    switch (error.code) {
+      case 'auth/user-not-found':
+        return 'No account found with this email address.';
+      case 'auth/wrong-password':
+        return 'Incorrect password.';
+      case 'auth/invalid-email':
+        return 'Invalid email address format.';
+      case 'auth/user-disabled':
+        return 'This account has been disabled.';
+      case 'auth/too-many-requests':
+        return 'Too many failed attempts. Please try again later.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your internet connection.';
+      case 'auth/invalid-credential':
+        return 'Invalid login credentials.';
+      default:
+        return error.message || 'An error occurred during login.';
     }
   };
-
-  if (needsVerification) {
-    const email = form.getFieldValue('email');
-    return (
-      <div className="auth-container">
-        <Card>
-          <Title level={2} style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            Email Verification Required
-          </Title>
-          <Alert
-            message="Please Verify Your Email"
-            description={
-              <div>
-                <p>You need to verify your email address before logging in.</p>
-                <p>We've sent a verification email to <strong>{email}</strong></p>
-                <Button type="link" onClick={handleResendVerification}>
-                  Resend verification email
-                </Button>
-              </div>
-            }
-            type="warning"
-            showIcon
-          />
-          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-            <Button type="link" onClick={() => setNeedsVerification(false)}>
-              Back to Login
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="auth-container">
-      <Card>
-        <Title level={2} style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          Login
+      <Card style={{ maxWidth: '400px', margin: '0 auto' }}>
+        <Title level={2} style={{ textAlign: 'center', marginBottom: '24px' }}>
+          Log In
         </Title>
-        {error && (
-          <Alert
-            message={error}
-            type="error"
-            showIcon
-            style={{ marginBottom: '1rem' }}
-          />
+
+        {needsVerification && (
+          <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px' }}>
+            <Text type="warning">
+              A verification email has been sent to your email address. Please verify your email before logging in.
+            </Text>
+          </div>
         )}
+
+        {error && (
+          <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#fff2f0', border: '1px solid #ffccc7', borderRadius: '4px' }}>
+            <Text type="danger">{error}</Text>
+          </div>
+        )}
+
         <Form
           form={form}
-          onFinish={handleLogin}
           layout="vertical"
+          onFinish={handleLogin}
         >
           <Form.Item
             name="email"
-            rules={[
-              { required: true, message: 'Please input your email!' },
-              { type: 'email', message: 'Please enter a valid email!' }
-            ]}
+            rules={[{ required: true, message: 'Please input your email!' }]}
           >
-            <Input
-              prefix={<UserOutlined />}
-              type="email"
-              placeholder="Email"
-              size="large"
+            <Input 
+              prefix={<UserOutlined />} 
+              placeholder="Email" 
+              size="large" 
             />
           </Form.Item>
+
           <Form.Item
             name="password"
-            rules={[
-              { required: true, message: 'Please input your password!' },
-              { min: 6, message: 'Password must be at least 6 characters!' }
-            ]}
+            rules={[{ required: true, message: 'Please input your password!' }]}
           >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Password"
-              size="large"
+            <Input.Password 
+              prefix={<LockOutlined />} 
+              placeholder="Password" 
+              size="large" 
             />
           </Form.Item>
+
           <Form.Item>
             <Button 
               type="primary" 
               htmlType="submit" 
+              size="large" 
               block 
               loading={loading}
-              size="large"
             >
-              Login
+              Log In
             </Button>
           </Form.Item>
         </Form>
@@ -236,21 +231,17 @@ function Login() {
         <Divider>Or</Divider>
 
         <Button 
-          icon={<GoogleOutlined />}
+          icon={<GoogleOutlined />} 
+          size="large" 
           block 
           onClick={handleGoogleLogin}
-          size="large"
-          style={{ 
-            marginBottom: '1rem',
-            background: '#fff',
-            border: '1px solid #d9d9d9'
-          }}
+          style={{ marginBottom: '16px' }}
         >
           Continue with Google
         </Button>
 
-        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-          Don't have an account? <Link to="/signup">Sign up</Link>
+        <div style={{ textAlign: 'center' }}>
+          <Text>Don't have an account? <Link to="/signup">Sign up</Link></Text>
         </div>
       </Card>
     </div>

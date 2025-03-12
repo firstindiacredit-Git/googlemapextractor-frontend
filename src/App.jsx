@@ -51,7 +51,7 @@ import {
   signOut
 } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { setUserLoggedOut } from './../loginStatusService';
+import { setUserLoggedOut } from './services/loginStatusService';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -490,20 +490,20 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      // Get the user ID before signing out
+      // Get user ID before signing out
       const userId = auth.currentUser?.uid;
       
       if (userId) {
-        // Set user as logged out
+        // Set user as logged out in Firestore
         await setUserLoggedOut(userId);
       }
       
-      // Then sign out
+      // Sign out from Firebase
       await signOut(auth);
       navigate('/login');
     } catch (error) {
       console.error('Error logging out:', error);
-      message.error('Logout failed. Please try again.');
+      message.error('Failed to log out. Please try again.');
     }
   };
 
